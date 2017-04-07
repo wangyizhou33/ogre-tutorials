@@ -38,19 +38,19 @@ void TutorialApplication::createScene(void)
     // create a Ninja
     Ogre::Entity* ninjaEntity = mSceneMgr->createEntity("ninja.mesh");
     ninjaEntity->setCastShadows(true);
-     
+
     mSceneMgr->getRootSceneNode()->createChildSceneNode()->attachObject(ninjaEntity);
 
     // create a plane the ninja stands on
     Ogre::Plane plane(Ogre::Vector3::UNIT_Y, 0);
     Ogre::MeshManager::getSingleton().createPlane(
-      "ground",
-      Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME,
-      plane, 
-      1500, 1500, 20, 20, 
-      true, 
-      1, 5, 5, 
-      Ogre::Vector3::UNIT_Z);
+        "ground",
+        Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME,
+        plane,
+        1500, 1500, 20, 20,
+        true,
+        1, 5, 5,
+        Ogre::Vector3::UNIT_Z);
 
     Ogre::Entity* groundEntity = mSceneMgr->createEntity("ground");
     mSceneMgr->getRootSceneNode()->createChildSceneNode()->attachObject(groundEntity);
@@ -95,8 +95,8 @@ void TutorialApplication::createViewports()
     Ogre::Viewport* vp = mWindow->addViewport(mCamera);
     vp->setBackgroundColour(Ogre::ColourValue(0, 0, 0));
     mCamera->setAspectRatio(
-  Ogre::Real(vp->getActualWidth()) /
-  Ogre::Real(vp->getActualHeight()));
+        Ogre::Real(vp->getActualWidth()) /
+        Ogre::Real(vp->getActualHeight()));
 }
 
 #if OGRE_PLATFORM == OGRE_PLATFORM_WIN32
