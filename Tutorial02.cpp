@@ -23,10 +23,6 @@ TutorialApplication::TutorialApplication(void)
 //-------------------------------------------------------------------------------------
 TutorialApplication::~TutorialApplication(void)
 {
-    if (mCameraMan)
-    {
-        delete mCameraMan;
-    }
 }
 
 //-------------------------------------------------------------------------------------
