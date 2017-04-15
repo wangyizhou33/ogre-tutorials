@@ -96,12 +96,12 @@ endif()
  
 set(HDRS
 	./BaseApplication.h
-	./Tutorial02.h
+	./Tutorial03.h
 )
  
 set(SRCS
 	./BaseApplication.cpp
-	./Tutorial02.cpp
+	./Tutorial03.cpp
 )
  
 include_directories( ${OIS_INCLUDE_DIRS}
@@ -114,8 +114,12 @@ add_executable(OgreApp WIN32 ${HDRS} ${SRCS})
  
 set_target_properties(OgreApp PROPERTIES DEBUG_POSTFIX _d)
  
-target_link_libraries(OgreApp ${OGRE_LIBRARIES} ${OIS_LIBRARIES} ${OGRE_Overlay_LIBRARIES})
- 
+target_link_libraries(OgreApp
+	${OGRE_LIBRARIES}
+  	${OIS_LIBRARIES}
+  	${OGRE_Overlay_LIBRARIES}
+  	${OGRE_Terrain_LIBRARIES})
+
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/dist/bin)
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/dist/media)
  
