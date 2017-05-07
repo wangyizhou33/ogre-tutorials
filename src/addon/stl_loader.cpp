@@ -28,7 +28,8 @@
  */
 
 #include "stl_loader.h"
-#include <OGRE/OgreManualObject.h>
+#include <OgreManualObject.h>
+#include <iostream>
 
 STLLoader::STLLoader()
 {
@@ -42,6 +43,7 @@ bool STLLoader::load(const std::string &path)
 {
     FILE *input = fopen(path.c_str(), "r");
     if (!input) {
+        std::cerr << "Could not open " << path << " for read" << std::endl;
         return false;
     }
 
@@ -61,22 +63,90 @@ bool STLLoader::load(const std::string &path)
 
     // find the file size
     fseek(input, 0, SEEK_END);
-    long long fileSize = ftell(input);
-    fseek(input, 0, SEEK_SET);
+    long fileSize = ftell(input);
+    rewind(input);
 
-    uint8_t *buffer = new uint8_t[fileSize];
-    size_t tmp      = fread(buffer, fileSize, 1, input);
+    std::vector<uint8_t> buffer_vec(fileSize);
+    uint8_t *buffer = &buffer_vec[0];
+
+    long num_bytes_read = fread(buffer, 1, fileSize, input);
+    if (num_bytes_read != fileSize) {
+        std::cerr << "STLLoader::load " << path << " ) only read " << num_bytes_read << " bytes out of total " << fileSize << std::endl;
+        fclose(input);
+        return false;
+    }
     fclose(input);
 
-    bool success = load(buffer);
-    delete[] buffer;
-
-    return success;
+    return this->load(buffer, num_bytes_read, path);
 }
 
-bool STLLoader::load(uint8_t *buffer)
+bool STLLoader::load(uint8_t *buffer, const size_t num_bytes, const std::string &origin)
+{
+    // check for ascii since we can only load binary types with this class
+    std::string buffer_str = std::string(reinterpret_cast<char *>(buffer), num_bytes);
+
+    if (buffer_str.substr(0, 5) == std::string("solid")) {
+        // file says that it is ascii, but why should we trust it?
+
+        // check for "endsolid" as well
+        if (buffer_str.find("endsolid", 5) != std::string::npos) {
+            std::cerr << "The STL file '" << origin << "' is malformed. It "
+                                                       "starts with the word 'solid' and also contains the "
+                                                       "word 'endsolid', indicating that it's an ASCII STL "
+                                                       "file, but rviz can only load binary STL files so it "
+                                                       "will not be loaded. Please convert it to a "
+                                                       "binary STL file."
+                      << std::endl;
+            return false;
+        }
+
+        // chastise the user for malformed files
+        std::cerr << "The STL file '" << origin << "' is malformed. It starts "
+                                                   "with the word 'solid', indicating that it's an ASCII "
+                                                   "STL file, but it does not contain the word 'endsolid' so "
+                                                   "it is either a malformed ASCII STL file or it is actually "
+                                                   "a binary STL file. Trying to interpret it as a binary "
+                                                   "STL file instead."
+                  << std::endl;
+    }
+
+    // make sure there's enough data for a binary STL header and triangle count
+    static const size_t binary_stl_header_len = 84;
+    if (num_bytes <= binary_stl_header_len) {
+        std::cerr << "The STL file '" << origin << "' is malformed. It "
+                                                   "appears to be a binary STL file but does not contain "
+                                                   "enough data for the 80 byte header and 32-bit integer "
+                                                   "triangle count."
+                  << std::endl;
+        return false;
+    }
+
+    // one last check to make sure that the size matches the number of triangles
+    unsigned int num_triangles                       = *(reinterpret_cast<uint32_t *>(buffer + 80));
+    static const size_t number_of_bytes_per_triangle = 50;
+    size_t expected_size                             = binary_stl_header_len + num_triangles * number_of_bytes_per_triangle;
+    if (num_bytes < expected_size) {
+        std::cerr << "The STL file '" << origin << "' is malformed. According "
+                                                   "to the binary STL header it should have '"
+                  << num_triangles << "' triangles, but it has too little"
+                  << " data for that to be the case." << std::endl;
+        return false;
+    } else if (num_bytes > expected_size) {
+        std::cerr << "The STL file '" << origin << "' is malformed. According "
+                                                   "to the binary STL header it should have '"
+                  << num_triangles << "' triangles, but it has too much"
+                  << " data for that to be the case. The extra data will be"
+                  << " ignored." << std::endl;
+    }
+
+    // load the binary STL data
+    return this->load_binary(buffer);
+}
+
+bool STLLoader::load_binary(uint8_t *buffer)
 {
     uint8_t *pos = buffer;
+
     pos += 80; // skip the 80 byte header
 
     unsigned int numTriangles = *(unsigned int *)pos;
@@ -123,8 +193,8 @@ bool STLLoader::load(uint8_t *buffer)
             Ogre::Vector3 side1 = tri.vertices_[0] - tri.vertices_[1];
             Ogre::Vector3 side2 = tri.vertices_[1] - tri.vertices_[2];
             tri.normal_         = side1.crossProduct(side2);
-            tri.normal_.normalise();
         }
+        tri.normal_.normalise();
 
         triangles_.push_back(tri);
     }
@@ -154,7 +224,14 @@ Ogre::MeshPtr STLLoader::toMesh(const std::string &name)
     V_Triangle::const_iterator it  = triangles_.begin();
     V_Triangle::const_iterator end = triangles_.end();
     for (; it != end; ++it) {
-        std::cout << "here" << std::endl;
+        if (vertexCount >= 2004) {
+            // Subdivide large meshes into submeshes with at most 2004
+            // vertices to prevent problems on some graphics cards.
+            object->end();
+            object->begin("BaseWhiteNoLighting", Ogre::RenderOperation::OT_TRIANGLE_LIST);
+            vertexCount = 0;
+        }
+
         const STLLoader::Triangle &tri = *it;
 
         float u, v;
@@ -180,6 +257,7 @@ Ogre::MeshPtr STLLoader::toMesh(const std::string &name)
     }
 
     object->end();
+
     Ogre::MeshPtr mesh = object->convertToMesh(name, Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME);
     mesh->buildEdgeList();
 

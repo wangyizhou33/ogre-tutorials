@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Willow Garage, Inc.
+ * Copyright (c) 2010, Willow Garage, Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,37 +27,11 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef OGRE_TOOLS_STL_LOADER_H
-#define OGRE_TOOLS_STL_LOADER_H
+#ifndef MESH_LOADER_H
+#define MESH_LOADER_H
 
-#include <OgreVector3.h>
 #include <OgreMesh.h>
 
-#include <vector>
-#include <stdint.h>
+Ogre::MeshPtr loadMeshFromResource(const std::string &resource_path);
 
-class STLLoader
-{
-public:
-    STLLoader();
-    ~STLLoader();
-
-    bool load(const std::string &path);
-    bool load(uint8_t *buffer, const size_t num_bytes, const std::string &origin);
-
-    Ogre::MeshPtr toMesh(const std::string &name);
-
-    struct Triangle {
-        Ogre::Vector3 vertices_[3];
-        Ogre::Vector3 normal_;
-    };
-
-    typedef std::vector<Triangle> V_Triangle;
-    V_Triangle triangles_;
-
-protected:
-    //! Load a binary STL file
-    bool load_binary(uint8_t *buffer);
-};
-
-#endif
+#endif // MESH_LOADER_H

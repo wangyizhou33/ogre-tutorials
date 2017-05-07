@@ -18,6 +18,8 @@ cmake_minimum_required(VERSION 2.6)
  
 project(OgreApp)
  
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+
 if(WIN32)
 	set(CMAKE_MODULE_PATH "$ENV{OGRE_HOME}/CMake/;${CMAKE_MODULE_PATH}")
 	set(OGRE_SAMPLES_INCLUDEPATH
@@ -80,7 +82,7 @@ if (NOT OGRE_BUILD_PLATFORM_IPHONE)
 	set(Boost_ADDITIONAL_VERSIONS "1.44" "1.44.0" "1.42" "1.42.0" "1.41.0" "1.41" "1.40.0" "1.40" "1.39.0" "1.39" "1.38.0" "1.38" "1.37.0" "1.37" )
 	# Components that need linking (NB does not include header-only components like bind)
 	set(OGRE_BOOST_COMPONENTS thread date_time)
-	find_package(Boost COMPONENTS ${OGRE_BOOST_COMPONENTS} QUIET)
+	find_package(Boost COMPONENTS ${OGRE_BOOST_COMPONENTS} system filesystem REQUIRED QUIET)
 	if (NOT Boost_FOUND)
 		# Try again with the other type of libs
 		set(Boost_USE_STATIC_LIBS NOT ${Boost_USE_STATIC_LIBS})
@@ -94,22 +96,32 @@ if (NOT OGRE_BUILD_PLATFORM_IPHONE)
 	set(OGRE_LIBRARIES ${OGRE_LIBRARIES} ${Boost_LIBRARIES})
 endif()
  
-set(HDRS
-#	./BaseApplication.h
-	src/stlObjectApp
-	src/addon/stl_loader.h
-)
- 
-set(SRCS
-#	./BaseApplication.cpp
-	src/addon/stl_loader.cpp
-	src/stlObjectApp.cpp
-)
- 
+
 include_directories( ${OIS_INCLUDE_DIRS}
 	${OGRE_INCLUDE_DIRS}
 	${OGRE_SAMPLES_INCLUDEPATH}
 	${OGRE_Overlay_INCLUDE_DIRS}
+	${CMAKE_CURRENT_SOURCE_DIR}/src/addon
+)
+
+add_library(Meshload 
+	STATIC
+	src/addon/retriever.cpp
+	src/addon/mesh_loader.cpp
+	src/addon/stl_loader.cpp
+)
+target_compile_definitions(Meshload PRIVATE ASSIMP_UNIFIED_HEADER_NAMES)
+target_link_libraries(Meshload curl tinyxml ${Boost_SYSTEM_LIBRARY}  ${Boost_FILESYSTEM_LIBRARY} ${Boost_LIBRARIES} assimp)
+
+
+set(HDRS
+#	./BaseApplication.h
+	src/stlObjectApp
+)
+ 
+set(SRCS
+#	./BaseApplication.cpp
+	src/stlObjectApp.cpp
 )
  
 add_executable(OgreApp WIN32 ${HDRS} ${SRCS})
@@ -117,10 +129,12 @@ add_executable(OgreApp WIN32 ${HDRS} ${SRCS})
 set_target_properties(OgreApp PROPERTIES DEBUG_POSTFIX _d)
  
 target_link_libraries(OgreApp
+	Meshload 
 	${OGRE_LIBRARIES}
   	${OIS_LIBRARIES}
   	${OGRE_Overlay_LIBRARIES}
-  	${OGRE_Terrain_LIBRARIES})
+  	${OGRE_Terrain_LIBRARIES}
+)
 
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/dist/bin)
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/dist/media)

@@ -9,7 +9,8 @@
 #include <OgreEntity.h>
 #include <OgreWindowEventUtilities.h>
 
-#include "addon/stl_loader.h"
+#include "mesh_loader.h"
+#include "stl_loader.h"
 
 TutorialApplication::TutorialApplication()
     : mRoot(0), mResourcesCfg(Ogre::StringUtil::BLANK), mPluginsCfg(Ogre::StringUtil::BLANK), mWindow(0), mSceneMgr(0), mCamera(0), mInputManager(0), mMouse(0), mKeyboard(0)
@@ -62,7 +63,7 @@ bool TutorialApplication::go()
     mSceneMgr = mRoot->createSceneManager(Ogre::ST_GENERIC);
     mCamera   = mSceneMgr->createCamera("MainCam");
 
-    mCamera->setPosition(0, 0, 80);
+    mCamera->setPosition(0, 0, 30);
     mCamera->lookAt(0, 0, -300);
     mCamera->setNearClipDistance(5);
 
@@ -75,12 +76,8 @@ bool TutorialApplication::go()
 
     // Create Scene
     STLLoader mesh_loader;
-    Ogre::MeshPtr car_mesh;
-    if (mesh_loader.load("/home/yizhouw/Desktop/ogre-tutorials/build/dist/media/models/car.stl"))
-        car_mesh = mesh_loader.toMesh("VW");
-    else
-        std::cout << "mesh not loaded." << std::endl;
-
+    std::string meshfile     = "/home/yizhouw/Desktop/simworld/aidrive/aidrive_ros/mesh/VW.dae";
+    Ogre::MeshPtr car_mesh   = loadMeshFromResource(meshfile);
     Ogre::Entity *ogreEntity = mSceneMgr->createEntity(car_mesh);
     std::cout << "here" << std::endl;
     Ogre::SceneNode *ogreNode = mSceneMgr->getRootSceneNode()->createChildSceneNode();
