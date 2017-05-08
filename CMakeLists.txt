@@ -40,14 +40,14 @@ if(UNIX)
 
 	else ()
 	  message(SEND_ERROR "Failed to find module path.")
-	endif(EXISTS "/usr/local/lib/OGRE")
+	endif(EXISTS "/usr/local/lib/OGRE/cmake")
 endif(UNIX)
  
 if (CMAKE_BUILD_TYPE STREQUAL "")
   # CMake defaults to leaving CMAKE_BUILD_TYPE empty. This screws up
   # differentiation between debug and release builds.
   set(CMAKE_BUILD_TYPE "RelWithDebInfo" CACHE STRING "Choose the type of build, options are: None (CMAKE_CXX_FLAGS or CMAKE_C_FLAGS used) Debug Release RelWithDebInfo MinSizeRel." FORCE)
-endif ()
+endif (CMAKE_BUILD_TYPE STREQUAL "")
  
 set(CMAKE_DEBUG_POSTFIX "_d")
  
@@ -82,7 +82,7 @@ if (NOT OGRE_BUILD_PLATFORM_IPHONE)
 	set(Boost_ADDITIONAL_VERSIONS "1.44" "1.44.0" "1.42" "1.42.0" "1.41.0" "1.41" "1.40.0" "1.40" "1.39.0" "1.39" "1.38.0" "1.38" "1.37.0" "1.37" )
 	# Components that need linking (NB does not include header-only components like bind)
 	set(OGRE_BOOST_COMPONENTS thread date_time)
-	find_package(Boost COMPONENTS ${OGRE_BOOST_COMPONENTS} system filesystem REQUIRED QUIET)
+	find_package(Boost COMPONENTS ${OGRE_BOOST_COMPONENTS} system filesystem REQUIRED)
 	if (NOT Boost_FOUND)
 		# Try again with the other type of libs
 		set(Boost_USE_STATIC_LIBS NOT ${Boost_USE_STATIC_LIBS})
@@ -104,24 +104,26 @@ include_directories( ${OIS_INCLUDE_DIRS}
 	${CMAKE_CURRENT_SOURCE_DIR}/src/addon
 )
 
-add_library(Meshload 
+add_library(ResourceLoader 
 	STATIC
 	src/addon/retriever.cpp
 	src/addon/mesh_loader.cpp
 	src/addon/stl_loader.cpp
 )
-target_compile_definitions(Meshload PRIVATE ASSIMP_UNIFIED_HEADER_NAMES)
-target_link_libraries(Meshload curl tinyxml ${Boost_SYSTEM_LIBRARY}  ${Boost_FILESYSTEM_LIBRARY} ${Boost_LIBRARIES} assimp)
+target_compile_definitions(ResourceLoader PRIVATE ASSIMP_UNIFIED_HEADER_NAMES)
+target_link_libraries(ResourceLoader curl tinyxml ${Boost_SYSTEM_LIBRARY}  ${Boost_FILESYSTEM_LIBRARY} ${Boost_LIBRARIES} assimp)
 
 
 set(HDRS
 #	./BaseApplication.h
-	src/stlObjectApp
+#	src/stlObjectApp
+	src/application.h
 )
  
 set(SRCS
 #	./BaseApplication.cpp
-	src/stlObjectApp.cpp
+#	src/stlObjectApp.cpp
+	src/application.cpp
 )
  
 add_executable(OgreApp WIN32 ${HDRS} ${SRCS})
@@ -129,7 +131,7 @@ add_executable(OgreApp WIN32 ${HDRS} ${SRCS})
 set_target_properties(OgreApp PROPERTIES DEBUG_POSTFIX _d)
  
 target_link_libraries(OgreApp
-	Meshload 
+	ResourceLoader
 	${OGRE_LIBRARIES}
   	${OIS_LIBRARIES}
   	${OGRE_Overlay_LIBRARIES}
