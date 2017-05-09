@@ -124,6 +124,7 @@ set(SRCS
 #	./BaseApplication.cpp
 #	src/stlObjectApp.cpp
 	src/application.cpp
+	src/intermediate/camera.cpp
 )
  
 add_executable(OgreApp WIN32 ${HDRS} ${SRCS})

@@ -33,6 +33,7 @@ This source file is part of the
 
 #include <SdkTrays.h>
 #include <SdkCameraMan.h>
+#include "intermediate/camera.h"
 
 class BaseApplication : public Ogre::FrameListener, public Ogre::WindowEventListener, public OIS::KeyListener, public OIS::MouseListener, OgreBites::SdkTrayListener
 {
@@ -48,7 +49,7 @@ protected:
     virtual void chooseSceneManager(void);
     virtual void createCamera(void);
     virtual void createFrameListener(void);
-    virtual void createScene(void);
+    virtual void createScene(Ogre::SceneNode *node);
     virtual void destroyScene(void);
     virtual void createViewports(void);
     virtual void setupResources(void);
@@ -73,6 +74,7 @@ protected:
     virtual void windowClosed(Ogre::RenderWindow *rw);
 
     Ogre::Root *mRoot;
+    Camera *thirdPersonCamera;
     Ogre::Camera *mCamera;
     Ogre::SceneManager *mSceneMgr;
     Ogre::RenderWindow *mWindow;
@@ -81,6 +83,7 @@ protected:
     Ogre::OverlaySystem *mOverlaySystem;
     Ogre::Entity *mEntity;
     Ogre::SceneNode *mNode;
+    Ogre::SceneNode *mCarNode;
 
     // OgreBites
     OgreBites::SdkTrayManager *mTrayMgr;

@@ -20,7 +20,7 @@ This source file is part of the
 
 //-------------------------------------------------------------------------------------
 BaseApplication::BaseApplication(void)
-    : mRoot(0), mCamera(0), mSceneMgr(0), mWindow(0), mResourcesCfg(Ogre::StringUtil::BLANK), mPluginsCfg(Ogre::StringUtil::BLANK), mTrayMgr(0), mCameraMan(0), mDetailsPanel(0), mCursorWasVisible(false), mShutDown(false), mInputManager(0), mMouse(0), mKeyboard(0), mEntity(0), mNode(0), mDistance(0), mWalkSpd(10.0), mDirection(Ogre::Vector3::ZERO), mDestination(Ogre::Vector3::ZERO)
+    : mRoot(0), mCamera(0), mSceneMgr(0), mWindow(0), mResourcesCfg(Ogre::StringUtil::BLANK), mPluginsCfg(Ogre::StringUtil::BLANK), mTrayMgr(0), mCameraMan(0), mDetailsPanel(0), mCursorWasVisible(false), mShutDown(false), mInputManager(0), mMouse(0), mKeyboard(0), mEntity(0), mNode(0), mCarNode(0), mDistance(0), mWalkSpd(10.0), mDirection(Ogre::Vector3::ZERO), mDestination(Ogre::Vector3::ZERO), thirdPersonCamera(0)
 {
 }
 
@@ -34,6 +34,7 @@ BaseApplication::~BaseApplication(void)
         delete mCameraMan;
     }
 
+    delete thirdPersonCamera;
     //Remove ourself as a Window listener
     Ogre::WindowEventUtilities::removeWindowEventListener(mWindow, this);
     windowClosed(mWindow);
@@ -68,15 +69,17 @@ void BaseApplication::chooseSceneManager(void)
 void BaseApplication::createCamera(void)
 {
     // Create the camera
-    mCamera = mSceneMgr->createCamera("PlayerCam");
+    // mCamera = mSceneMgr->createCamera("PlayerCam");
 
-    // Position it at 500 in Z direction
-    mCamera->setPosition(Ogre::Vector3(0, 0, 20));
-    // Look back along -Z
-    mCamera->lookAt(Ogre::Vector3(0, 0, 0));
-    mCamera->setNearClipDistance(5);
+    // // Position it at 500 in Z direction
+    // mCamera->setPosition(Ogre::Vector3(0, 0, 20));
+    // // Look back along -Z
+    // mCamera->lookAt(Ogre::Vector3(0, 0, 0));
+    // mCamera->setNearClipDistance(5);
 
-    mCameraMan = new OgreBites::SdkCameraMan(mCamera); // create a default camera controller
+    thirdPersonCamera = new Camera(mSceneMgr, mWindow);
+    mCamera           = thirdPersonCamera->getOgreCamera();
+    mCameraMan        = new OgreBites::SdkCameraMan(mCamera); // create a default camera controller
 }
 //-------------------------------------------------------------------------------------
 void BaseApplication::createFrameListener(void)
@@ -134,7 +137,7 @@ void BaseApplication::createFrameListener(void)
     mRoot->addFrameListener(this);
 }
 
-void BaseApplication::createScene(void)
+void BaseApplication::createScene(Ogre::SceneNode *main_node)
 {
     mSceneMgr->setAmbientLight(Ogre::ColourValue(1, 1, 1));
     Ogre::Light *light = mSceneMgr->createLight("MainLight");
@@ -144,7 +147,8 @@ void BaseApplication::createScene(void)
     std::string meshfile   = "/home/yizhouw/Desktop/simworld/aidrive/aidrive_ros/mesh/VW.dae";
     Ogre::MeshPtr car_mesh = loadMeshFromResource(meshfile);
     mEntity                = mSceneMgr->createEntity(car_mesh);
-    mNode                  = mSceneMgr->getRootSceneNode()->createChildSceneNode();
+    mNode                  = main_node;
+    mCarNode               = mNode->createChildSceneNode();
     mNode->attachObject(mEntity);
 
     // path object
@@ -271,7 +275,7 @@ bool BaseApplication::setup(void)
 
     chooseSceneManager();
     createCamera();
-    createViewports();
+    //createViewports();
 
     // Set default mipmap level (NB some APIs ignore this)
     Ogre::TextureManager::getSingleton().setDefaultNumMipmaps(5);
@@ -282,7 +286,7 @@ bool BaseApplication::setup(void)
     loadResources();
 
     // Create the scene
-    createScene();
+    createScene(thirdPersonCamera->getNode());
 
     createFrameListener();
 
