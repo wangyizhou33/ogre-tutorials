@@ -161,7 +161,7 @@ void BaseApplication::createScene(Ogre::SceneNode *main_node)
 
     std::vector<Ogre::Vector3> path_data;
     for (size_t i = 0; i < 100; ++i) {
-        Ogre::Vector3 pt(0, 1.0 * i, 0);
+        Ogre::Vector3 pt(0, 1.0 * i, 0.2);
         path_data.push_back(pt);
     }
 
@@ -180,15 +180,15 @@ void BaseApplication::createScene(Ogre::SceneNode *main_node)
         "ground",
         Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME,
         plane,
-        15, 15, 2, 2,
+        15 * 5 * 5, 15 * 5 * 5, 2, 2,
         true,
-        1, 5, 5,
+        1, 3 * 4, 3 * 4,
         Ogre::Vector3::UNIT_X);
 
     Ogre::Entity *groundEntity = mSceneMgr->createEntity("ground");
     mSceneMgr->getRootSceneNode()->createChildSceneNode()->attachObject(groundEntity);
     groundEntity->setCastShadows(false);
-    groundEntity->setMaterialName("Examples/Rockwall");
+    groundEntity->setMaterialName("Examples/GrassFloor");
 
     /// add waypoint
     mWalkList.push_back(Ogre::Vector3(0, 100.0, 0.0));
