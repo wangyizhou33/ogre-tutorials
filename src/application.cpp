@@ -20,7 +20,7 @@ This source file is part of the
 
 //-------------------------------------------------------------------------------------
 BaseApplication::BaseApplication(void)
-    : mRoot(0), mCamera(0), mSceneMgr(0), mWindow(0), mResourcesCfg(Ogre::StringUtil::BLANK), mPluginsCfg(Ogre::StringUtil::BLANK), mTrayMgr(0), mCameraMan(0), mDetailsPanel(0), mCursorWasVisible(false), mShutDown(false), mInputManager(0), mMouse(0), mKeyboard(0)
+    : mRoot(0), mCamera(0), mSceneMgr(0), mWindow(0), mResourcesCfg(Ogre::StringUtil::BLANK), mPluginsCfg(Ogre::StringUtil::BLANK), mTrayMgr(0), mCameraMan(0), mDetailsPanel(0), mCursorWasVisible(false), mShutDown(false), mInputManager(0), mMouse(0), mKeyboard(0), mEntity(0), mNode(0), mDistance(0), mWalkSpd(10.0), mDirection(Ogre::Vector3::ZERO), mDestination(Ogre::Vector3::ZERO)
 {
 }
 
@@ -141,19 +141,22 @@ void BaseApplication::createScene(void)
     light->setType(Ogre::Light::LightTypes::LT_POINT);
     light->setPosition(20, 20, 20);
     // car object
-    std::string meshfile      = "/home/yizhouw/Desktop/simworld/aidrive/aidrive_ros/mesh/VW.dae";
-    Ogre::MeshPtr car_mesh    = loadMeshFromResource(meshfile);
-    Ogre::Entity *carEntity   = mSceneMgr->createEntity(car_mesh);
-    Ogre::SceneNode *ogreNode = mSceneMgr->getRootSceneNode()->createChildSceneNode();
-    ogreNode->attachObject(carEntity);
+    std::string meshfile   = "/home/yizhouw/Desktop/simworld/aidrive/aidrive_ros/mesh/VW.dae";
+    Ogre::MeshPtr car_mesh = loadMeshFromResource(meshfile);
+    mEntity                = mSceneMgr->createEntity(car_mesh);
+    mNode                  = mSceneMgr->getRootSceneNode()->createChildSceneNode();
+    mNode->attachObject(mEntity);
 
     // path object
     Ogre::ManualObject *path_obj = mSceneMgr->createManualObject();
     path_obj->setDynamic(true);
-    ogreNode->attachObject(path_obj);
+
+    Ogre::SceneNode *node;
+    node = mSceneMgr->getRootSceneNode()->createChildSceneNode();
+    node->attachObject(path_obj);
 
     std::vector<Ogre::Vector3> path_data;
-    for (size_t i = 0; i < 20; ++i) {
+    for (size_t i = 0; i < 100; ++i) {
         Ogre::Vector3 pt(0, 1.0 * i, 0);
         path_data.push_back(pt);
     }
@@ -182,6 +185,9 @@ void BaseApplication::createScene(void)
     mSceneMgr->getRootSceneNode()->createChildSceneNode()->attachObject(groundEntity);
     groundEntity->setCastShadows(false);
     groundEntity->setMaterialName("Examples/Rockwall");
+
+    /// add waypoint
+    mWalkList.push_back(Ogre::Vector3(0, 100.0, 0.0));
 }
 
 //-------------------------------------------------------------------------------------
@@ -297,6 +303,34 @@ bool BaseApplication::frameRenderingQueued(const Ogre::FrameEvent &evt)
     mKeyboard->capture();
     mMouse->capture();
 
+    //motion
+    if (mDirection == Ogre::Vector3::ZERO) {
+        if (nextLocation()) {
+        }
+    } else {
+        Ogre::Real move = mWalkSpd * evt.timeSinceLastFrame;
+        mDistance -= move;
+
+        if (mDistance <= 0.0) {
+            mNode->setPosition(mDestination);
+            mDirection = Ogre::Vector3::ZERO;
+
+            if (nextLocation()) {
+                Ogre::Vector3 src = mNode->getOrientation() * Ogre::Vector3::UNIT_X;
+
+                if ((1.0 + src.dotProduct(mDirection)) < 0.0001) {
+                    mNode->yaw(Ogre::Degree(180));
+                } else {
+                    Ogre::Quaternion quat = src.getRotationTo(mDirection);
+                    mNode->rotate(quat);
+                }
+            } else {
+            }
+        } else {
+            mNode->translate(move * mDirection);
+        }
+    }
+
     mTrayMgr->frameRenderingQueued(evt);
 
     if (!mTrayMgr->isDialogVisible()) {
@@ -319,6 +353,20 @@ bool BaseApplication::frameRenderingQueued(const Ogre::FrameEvent &evt)
 
     return true;
 }
+
+bool BaseApplication::nextLocation()
+{
+    if (mWalkList.empty())
+        return false;
+
+    mDestination = mWalkList.front();
+    mWalkList.pop_front();
+    mDirection = mDestination - mNode->getPosition();
+    mDistance  = mDirection.normalise();
+
+    return true;
+}
+
 //-------------------------------------------------------------------------------------
 bool BaseApplication::keyPressed(const OIS::KeyEvent &arg)
 {

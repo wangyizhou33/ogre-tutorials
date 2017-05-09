@@ -79,6 +79,8 @@ protected:
     Ogre::String mResourcesCfg;
     Ogre::String mPluginsCfg;
     Ogre::OverlaySystem *mOverlaySystem;
+    Ogre::Entity *mEntity;
+    Ogre::SceneNode *mNode;
 
     // OgreBites
     OgreBites::SdkTrayManager *mTrayMgr;
@@ -91,6 +93,13 @@ protected:
     OIS::InputManager *mInputManager;
     OIS::Mouse *mMouse;
     OIS::Keyboard *mKeyboard;
+
+    bool nextLocation();
+    std::deque<Ogre::Vector3> mWalkList;
+    Ogre::Real mDistance;
+    Ogre::Real mWalkSpd;
+    Ogre::Vector3 mDirection;
+    Ogre::Vector3 mDestination;
 };
 
 #endif // #ifndef Application_h_
